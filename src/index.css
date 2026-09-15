@@ -1,0 +1,439 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --font-pixel: 'Press Start 2P', monospace;
+  --font-body: 'Inter', system-ui, sans-serif;
+
+  --gothic-bg-deep: #080604;
+  --gothic-bg-dark: #100a06;
+  --gothic-bg-panel: #180e08;
+  --gothic-bg-input: #0c0806;
+  --gothic-border: #4a3828;
+  --gothic-border-dim: #301c10;
+  --gothic-gold: #b8860b;
+  --gothic-gold-bright: #d4a017;
+  --gothic-gold-copper: #c09040;
+  --gothic-blood: #6b1010;
+  --gothic-crimson: #a01020;
+  --gothic-iron: #4a3830;
+  --gothic-text: #e0e0d0;
+  --gothic-text-dim: #807060;
+  --gothic-rarity-common: #707060;
+  --gothic-rarity-uncommon: #30a030;
+  --gothic-rarity-rare: #4080c0;
+  --gothic-nature: #4a6a2a;
+  --gothic-nature-dark: #306230;
+  --gothic-nature-light: #8bac0f;
+  --gothic-rarity-magic: #4080c0;
+  --gothic-rarity-epic: #8030b0;
+  --gothic-rarity-unique: #c08020;
+
+  /* Derived / semantic aliases (kept for backward compat with existing components) */
+  --color-bg-deep: var(--gothic-bg-deep);
+  --color-bg-dark: var(--gothic-bg-dark);
+  --color-bg-panel: var(--gothic-bg-panel);
+  --color-bg-input: var(--gothic-bg-input);
+  --color-accent: var(--gothic-gold);
+  --color-accent-dim: #996a08;
+  --color-accent-bright: var(--gothic-gold-bright);
+  --color-border: var(--gothic-border);
+  --color-border-dark: var(--gothic-border-dim);
+  --color-border-light: #604028;
+  --color-hp-high: #30a030;
+  --color-hp-mid: #d0a030;
+  --color-hp-low: var(--gothic-crimson);
+  --color-mp: #3060c0;
+  --color-mp-light: #4080e0;
+  --color-text: var(--gothic-text);
+  --color-text-dim: var(--gothic-text-dim);
+  --color-text-dark: #5a4a3a;
+  --color-danger: var(--gothic-crimson);
+  --color-danger-dark: var(--gothic-blood);
+  --color-rarity-common: var(--gothic-rarity-common);
+  --color-rarity-magic: var(--gothic-rarity-magic);
+  --color-rarity-epic: var(--gothic-rarity-epic);
+  --color-rarity-unique: var(--gothic-rarity-unique);
+  --border-panel: 2px solid var(--gothic-border);
+  --border-panel-dark: 2px solid var(--gothic-border-dim);
+
+  /* Gothic panel palette (replaces WoW Character Panel) */
+  --wow-bg: var(--gothic-bg-deep);
+  --wow-bg-panel: var(--gothic-bg-panel);
+  --wow-bg-slot: #180e08;
+  --wow-bg-slot-empty: #100a06;
+  --wow-border: var(--gothic-border);
+  --wow-border-gold: var(--gothic-gold);
+  --wow-border-gold-bright: var(--gothic-gold-bright);
+  --wow-text: var(--gothic-text);
+  --wow-text-dim: var(--gothic-text-dim);
+  --wow-text-gold: var(--gothic-gold-copper);
+  --wow-accent: var(--gothic-gold-bright);
+
+  /* Item quality colors (gothic) */
+  --wow-q0: var(--gothic-rarity-common);
+  --wow-q1: var(--gothic-text);
+  --wow-q2: #1eff00;
+  --wow-q3: var(--gothic-rarity-magic);
+  --wow-q4: var(--gothic-rarity-epic);
+  --wow-q5: #ff8000;
+  --wow-q7: var(--gothic-rarity-unique);
+
+  /* Blasphemous palette tokens */
+  --blasphemous-blood: #8b0000;
+  --blasphemous-blood-fresh: #cc2233;
+  --blasphemous-iron-rust: #5a3a20;
+  --blasphemous-patina: #2a4a30;
+  --blasphemous-incense: #d4a574;
+  --blasphemous-shadow: #0a0408;
+}
+
+[data-high-contrast="true"] {
+  --color-bg-deep: #000000;
+  --color-bg-dark: #120a0c;
+  --color-text: #ffffff;
+  --color-accent: var(--gothic-gold-bright);
+}
+
+.gothic-bg {
+  background:
+    repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 3px
+    ),
+    radial-gradient(ellipse at 50% 0%, #180e08 0%, #080604 70%);
+}
+
+[data-reduce-motion="true"],
+[data-reduce-motion="true"] *,
+[data-reduce-motion="true"] *::before,
+[data-reduce-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-bg-deep);
+}
+
+body {
+  font-family: var(--font-body);
+  cursor: default;
+  user-select: none;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--color-bg-deep); }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-accent-dim); }
+
+::selection {
+  background: rgba(192, 144, 64, 0.3);
+  color: var(--color-text);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.font-display { font-family: var(--font-pixel, Georgia, serif); }
+.font-body { font-family: var(--font-body, system-ui, sans-serif); }
+
+.animate-slide-up { animation: slideUp 0.25s ease-out; }
+.animate-fade-in { animation: fadeIn 0.3s ease-out; }
+.animate-scale-in { animation: scaleIn 0.2s ease-out; }
+.animate-blink { animation: blink 1s step-end infinite; }
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(192,144,64,0.2); }
+  50% { box-shadow: 0 0 12px rgba(192,144,64,0.5); }
+}
+
+@media (max-width: 640px) {
+  .gothic-panel { padding: 0.5rem; }
+}
+
+@media (pointer: coarse) {
+  button, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* WoW Character Panel utilities */
+.wow-panel {
+  background: var(--wow-bg-panel);
+  border: 2px solid var(--wow-border);
+}
+
+.wow-panel-gold {
+  background: var(--wow-bg-panel);
+  border: 2px solid var(--wow-border-gold);
+}
+
+.wow-slot {
+  background: var(--wow-bg-slot);
+  border: 2px solid var(--wow-border);
+}
+
+.wow-slot-empty {
+  background: var(--wow-bg-slot-empty);
+  border: 2px dashed var(--wow-border);
+}
+
+.wow-tab {
+  background: var(--wow-bg-panel);
+  border: 2px solid var(--wow-border);
+  color: var(--wow-text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.wow-tab:hover {
+  background: var(--wow-bg-slot);
+  border-color: var(--wow-border-gold);
+  color: var(--wow-text);
+}
+
+.wow-tab-active {
+  background: var(--wow-bg-slot);
+  border: 2px solid var(--wow-border-gold);
+  color: var(--wow-text-gold);
+}
+
+.wow-gold-text {
+  color: var(--wow-text-gold);
+}
+
+.wow-divider {
+  border-top: 1px solid var(--wow-border);
+}
+
+/* WoW-style scrollbar for character panel */
+.wow-scroll::-webkit-scrollbar { width: 6px; }
+.wow-scroll::-webkit-scrollbar-track { background: var(--wow-bg); }
+.wow-scroll::-webkit-scrollbar-thumb { background: var(--wow-border); border-radius: 0; }
+.wow-scroll::-webkit-scrollbar-thumb:hover { background: var(--wow-border-gold); }
+
+/* ── Blasphemous Gothic ornamental utilities ───────────────── */
+
+.border-ornate {
+  border: 2px solid transparent;
+  border-image: linear-gradient(
+    135deg,
+    var(--blasphemous-iron-rust) 0%,
+    #7a5a30 20%,
+    var(--gothic-border) 40%,
+    #5a3a20 60%,
+    var(--blasphemous-iron-rust) 80%,
+    #3a2010 100%
+  ) 1;
+  box-shadow:
+    inset 0 0 18px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(180, 140, 80, 0.08),
+    0 0 12px rgba(58, 32, 24, 0.4);
+}
+
+.corner-rivet {
+  position: relative;
+}
+.corner-rivet::before,
+.corner-rivet::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #c0a060, #6a4a20 60%, #3a2010);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 220, 140, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.6);
+  z-index: 20;
+}
+.corner-rivet::before { top: -3px; left: -3px; }
+.corner-rivet::after  { top: -3px; right: -3px; }
+
+.shadow-gothic-deep {
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.7),
+    inset 0 2px 0 rgba(180, 140, 80, 0.06),
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    0 0 1px rgba(90, 58, 32, 0.4);
+}
+
+.text-ember {
+  color: var(--gothic-gold-bright);
+  text-shadow:
+    0 0 6px rgba(212, 160, 23, 0.35),
+    0 0 14px rgba(212, 160, 23, 0.15),
+    0 1px 0 rgba(0, 0, 0, 0.6);
+}
+
+/* ── Existing Blasphemous classes ────────────────────────── */
+
+.border-rust {
+  border-image: linear-gradient(
+    180deg,
+    var(--blasphemous-iron-rust) 0%,
+    #7a4a20 30%,
+    var(--blasphemous-iron-rust) 50%,
+    #3a2010 70%,
+    var(--blasphemous-iron-rust) 100%
+  ) 1;
+}
+
+.text-blood-dry {
+  color: var(--blasphemous-blood);
+  text-shadow: 0 0 4px rgba(139, 0, 0, 0.3), 0 1px 0 rgba(0, 0, 0, 0.5);
+}
+
+.glow-gold {
+  box-shadow:
+    0 0 8px rgba(212, 165, 116, 0.25),
+    0 0 16px rgba(212, 165, 116, 0.12),
+    inset 0 0 6px rgba(212, 165, 116, 0.08);
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 8px rgba(212, 165, 116, 0.25),
+      0 0 16px rgba(212, 165, 116, 0.12),
+      inset 0 0 6px rgba(212, 165, 116, 0.08);
+  }
+  50% {
+    box-shadow:
+      0 0 12px rgba(212, 165, 116, 0.35),
+      0 0 24px rgba(212, 165, 116, 0.18),
+      inset 0 0 10px rgba(212, 165, 116, 0.12);
+  }
+}
+
+/* ── Global Layer Stacking System ───────────────────────── */
+.z-layer-card { z-index: 10; }
+.z-layer-dropdown { z-index: 20; }
+.z-layer-header { z-index: 30; }
+.z-layer-backdrop { z-index: 100; }
+.z-layer-modal { z-index: 110; }
+.z-layer-notification { z-index: 120; }
+.z-layer-tooltip { z-index: 200; }
+.z-layer-transition { z-index: 300; }
+
+/* ── Gothic Focus-Visible Ring ──────────────────────────── */
+.gothic-focus:focus-visible {
+  outline: 2px solid var(--gothic-gold-bright);
+  outline-offset: 2px;
+  box-shadow: 0 0 8px rgba(212, 160, 23, 0.4);
+}
+
+button:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible {
+  outline: 2px solid var(--gothic-gold-bright);
+  outline-offset: 2px;
+}
+
+/* ── Spell VFX Keyframes ──────────────────────────────── */
+
+@keyframes vfx-slash-anim {
+  0% { opacity: 0; transform: scale(0.4) rotate(-45deg); }
+  40% { opacity: 1; transform: scale(1.1) rotate(-45deg); }
+  100% { opacity: 0; transform: scale(1.4) rotate(-45deg); }
+}
+
+@keyframes vfx-burst-anim {
+  0% { opacity: 0; transform: scale(0.2); }
+  45% { opacity: 0.9; transform: scale(1.1); }
+  100% { opacity: 0; transform: scale(1.5); }
+}
+
+@keyframes vfx-heal-anim {
+  0% { opacity: 0; transform: translateY(16px) scale(0.8); }
+  50% { opacity: 0.85; }
+  100% { opacity: 0; transform: translateY(-16px) scale(1.15); }
+}
+
+.vfx-slash-effect {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.vfx-slash-effect::before {
+  content: '';
+  width: 120%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #cc2233, #ff4444, #cc2233, transparent);
+  box-shadow: 0 0 12px #cc2233, 0 0 24px rgba(204, 34, 51, 0.4);
+  animation: vfx-slash-anim 0.25s ease-out forwards;
+}
+
+.vfx-burst-effect {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.vfx-burst-effect::before {
+  content: '';
+  width: 50%;
+  height: 50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(64, 128, 192, 0.9), rgba(64, 128, 192, 0.4), transparent);
+  box-shadow: 0 0 20px rgba(64, 128, 192, 0.6), 0 0 40px rgba(64, 128, 192, 0.3);
+  animation: vfx-burst-anim 0.35s ease-out forwards;
+}
+
+.vfx-heal-effect {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.vfx-heal-effect::before {
+  content: '';
+  width: 80%;
+  height: 80%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(48, 160, 48, 0.7), rgba(48, 160, 48, 0.2), transparent);
+  box-shadow: 0 0 16px rgba(48, 160, 48, 0.5), inset 0 0 12px rgba(48, 160, 48, 0.3);
+  animation: vfx-heal-anim 0.45s ease-out forwards;
+}
