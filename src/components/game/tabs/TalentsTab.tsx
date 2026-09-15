@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore, dispatch } from '@/store/GameStore'
 import { GothicButton } from '@/components/common/GothicButton'
 import { GothicFrame } from '@/components/ui/GothicFrame'
-import { talentTree, ULTIMATE_SKILLS } from '@/data/gameData'
-import type { Talent, Class } from '@/types/game'
+import { talentTree, getUltimateForClass } from '@/data/gameData'
+import type { Talent } from '@/types/game'
 
 const TIER_LABELS = ['I', 'II', 'III', 'IV']
 
@@ -180,7 +180,7 @@ const RESOURCE_COLORS: Record<string, string> = {
 
 function UltimateSection({ characterClass }: { characterClass: string }) {
   const { character } = useGameStore()
-  const ultimateSkill = ULTIMATE_SKILLS[characterClass as Class]
+  const ultimateSkill = getUltimateForClass(characterClass)
   if (!ultimateSkill || !character) return null
 
   const isEquipped = character.ultimateEquipped === ultimateSkill.id

@@ -309,7 +309,7 @@ export function calculateDamage(
       targetSideStatuses[targetKey] = [...targetSideStatuses[targetKey], statusApplied]
       log.push({
         turn: state.turn,
-        message: skill?.isUltimate
+        message: skill.isUltimate
           ? `⚡ ${targetName} sufre ${skillStatusType} durante ${skill.statusDuration ?? 2} turnos`
           : `${targetName} sufre ${skillStatusType}`,
         type: 'status'

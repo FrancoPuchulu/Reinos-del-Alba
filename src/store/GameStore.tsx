@@ -370,7 +370,7 @@ function reducer(state: GameState, action: GameAction): GameState {
       const bonus = talent.chargesBonus ?? 0
       const newCharges = bonus > 0
         ? Object.fromEntries(
-            Object.entries(char.skills.charges).map(([k, v]) => [k, (v ?? 0) + bonus])
+            Object.entries(char.skills.charges).map(([k, v]) => [k, v + bonus])
           )
         : char.skills.charges
 

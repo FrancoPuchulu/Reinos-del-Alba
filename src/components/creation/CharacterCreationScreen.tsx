@@ -36,7 +36,6 @@ const STAT_ROWS: { key: string; label: string; icon: string; from: string; to: s
 function resolveStats(classId: string | null): Record<string, number> | null {
   if (!classId) return null
   const match = BASE_STATS_CLASES[classId as Class]
-  if (!match) return null
   const { hpMod: _h, mpMod: _m, damageType: _d, ...statBlock } = match
   return statBlock as Record<string, number>
 }

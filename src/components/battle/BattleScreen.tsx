@@ -182,8 +182,8 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({ playerData, enemyDat
           playerEmoji={playerEmoji} enemyEmoji={enemyEmoji} isFrenzied={isFrenzied}
           playerSpriteUrl={playerSpriteUrl}
           playerData={playerData}
-          playerUltimateCharge={player.ultimateCharge ?? 0}
-          enemyUltimateCharge={enemy.ultimateCharge ?? 0}
+          playerUltimateCharge={player.ultimateCharge}
+          enemyUltimateCharge={enemy.ultimateCharge}
           ultimateSkill={battleState.ultimateSkill ?? null}
           enemyUltimateSkill={battleState.enemy.ultimateSkill ?? null}
         />

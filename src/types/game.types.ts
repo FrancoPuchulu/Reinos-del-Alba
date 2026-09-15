@@ -137,6 +137,7 @@ export interface InventoryItem {
   icon?: string
   baseDamage?: number
   description?: string
+  levelRequired?: number
   durability?: number
   maxDurability?: number
   price?: number

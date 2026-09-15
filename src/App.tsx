@@ -6,13 +6,13 @@ import { SplashScreen } from '@/components/common/SplashScreen'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { PageTransition } from '@/components/common/PageTransition'
 import { dispatch } from '@/store/GameStore'
-import { classAbilities, ULTIMATE_SKILLS } from '@/data/gameData'
+import { classAbilities, getUltimateForClass } from '@/data/gameData'
 import { generateEnemyForLevel } from './game/enemies'
 import { generateLoot } from './game/loot'
 import { generatePvPLoot } from './utils/smartLoot'
 import { BASE_STATS_CLASES } from './game/config'
 import { consumePendingPvpRival, getConsumedPvpRival, clearConsumedPvpRival } from './game/pvpRivalState'
-import type { Skill, Class } from './types/game.types'
+import type { Skill } from './types/game.types'
 import type { EnemyAbility } from './types/combat'
 
 const LoginScreen = React.lazy(() => import('@/components/login/LoginScreen').then(m => ({ default: m.LoginScreen })))
@@ -41,7 +41,7 @@ function getEquippedSkills(charClass: string, equippedIds: string[]): Skill[] {
 
 function getEquippedUltimate(charClass: string, ultimateEquipped?: string): Skill | null {
   if (!ultimateEquipped) return null
-  const ultimate = ULTIMATE_SKILLS[charClass as Class]
+  const ultimate = getUltimateForClass(charClass)
   if (ultimate && ultimate.id === ultimateEquipped) return ultimate
   return null
 }
@@ -144,7 +144,7 @@ function AppContent() {
                 maxHp: consumedRival.stats.maxHealth,
                 hp: consumedRival.stats.health,
                 abilities: [] as EnemyAbility[],
-                ultimateSkill: ULTIMATE_SKILLS[consumedRival.spriteKey.split('-')[1] as Class] ?? null,
+                ultimateSkill: getUltimateForClass(consumedRival.spriteKey.split('-')[1]) ?? null,
               } : (() => {
                 const e = pendingEnemy
                 if (!e) return { id: 'loading', name: '...', clase: '...', level: 1, stats: {} as Record<string, number>, maxHp: 1, hp: 1, abilities: [] as EnemyAbility[] }

@@ -3,8 +3,8 @@ import { useGameStore, dispatch } from '@/store/GameStore'
 import { GothicButton } from '@/components/common/GothicButton'
 import { GothicFrame } from '@/components/ui/GothicFrame'
 import { InventorySlot } from '@/components/common/InventorySlot'
-import { classAbilities, ULTIMATE_SKILLS } from '@/data/gameData'
-import type { Skill, Class } from '@/types/game'
+import { classAbilities, getUltimateForClass } from '@/data/gameData'
+import type { Skill } from '@/types/game'
 import type { InventoryItem } from '@/types/game.types'
 import { PaperDoll, WeaponPaperDoll, CharacterStats, ExperienceBar } from './shared'
 import { LoadoutSelector } from './LoadoutSelector'
@@ -104,7 +104,7 @@ function SkillBook() {
 
       {/* 5th slot: Habilidad Definitiva */}
       {(() => {
-        const ultimateSkill = character.class ? ULTIMATE_SKILLS[character.class as Class] : undefined
+        const ultimateSkill = getUltimateForClass(character.class)
         if (!ultimateSkill) return null
         const isEquipped = character.ultimateEquipped === ultimateSkill.id
         const RESOURCE_COLORS: Record<string, string> = {

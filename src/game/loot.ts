@@ -36,6 +36,7 @@ export function generateLoot(playerLevel: number, charClass?: Class): InventoryI
     stats: item.stats,
     slot: item.slot,
     description: item.description,
+    levelRequired: item.levelRequired,
     durability: item.durability,
     maxDurability: item.maxDurability,
     equipped: false,

@@ -301,3 +301,7 @@ export const talentTree: Talent[] = [
     { id: "maestria-inicial", branch: "maestria", tier: 3, requires: ["runas-fluidas"], name: "Maestria inicial", description: "+1 punto a todos los stats", cost: 3, allStats: 1 },
     { id: "campeon-alba", branch: "central", tier: 4, requires: ["furia-enfocada", "guardia-veterana", "maestria-inicial"], name: "Campeon del Alba", description: "+2 a todos los stats", cost: 4, allStats: 2 }
 ];
+
+export function getUltimateForClass(charClass: string): Skill | undefined {
+  return (ULTIMATE_SKILLS as Record<string, Skill | undefined>)[charClass]
+}

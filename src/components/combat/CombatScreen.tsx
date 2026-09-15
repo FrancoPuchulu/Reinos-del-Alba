@@ -206,7 +206,7 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ playerData, enemyDat
       }
       const selectKeys: Record<string, number> = { q: 0, w: 1, e: 2, r: 3 }
       const qIdx = selectKeys[key.toLowerCase()]
-      if (qIdx != null && qIdx < player.abilities.length) {
+      if (qIdx < player.abilities.length) {
         setSelectedActionIndex(qIdx)
       }
     }

@@ -35,6 +35,7 @@ export function generatePvPLoot(playerClass: Class, pvpRarity?: PvPRarity): Inve
     stats: item.stats,
     slot: item.slot,
     description: item.description,
+    levelRequired: item.levelRequired,
     durability: item.durability,
     maxDurability: item.maxDurability,
     equipped: false,

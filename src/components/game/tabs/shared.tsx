@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore, dispatch } from '@/store/GameStore'
-import { classAbilities, ULTIMATE_SKILLS } from '@/data/gameData'
+import { classAbilities, getUltimateForClass } from '@/data/gameData'
 import { getCharacterSpritePair } from '@/data/sprites'
 import type { EquipmentSlot } from '@/types/items'
-import type { Class, ItemDefinition } from '@/types/game.types'
+import type { ItemDefinition, Class, SkillStyle } from '@/types/game.types'
 import { calculateTotalStats } from '@/utils/stats'
 import { RARITY_COLORS } from '@/constants/theme'
 
@@ -46,11 +46,11 @@ const STAT_LABELS: Record<string, string> = {
 }
 
 function ItemTooltip({ item }: { item: ItemDefinition }) {
-  const rarityColor = RARITY_COLORS[item.rarity] ?? 'var(--gothic-border)'
+  const rarityColor = RARITY_COLORS[item.rarity]
   const dur = item.durability
   const maxDur = item.maxDurability
   const isBroken = dur != null && dur === 0
-  const hasStats = item.stats && Object.values(item.stats).some(v => v)
+  const hasStats = Object.values(item.stats).some(v => v)
 
   return (
     <div
@@ -466,16 +466,14 @@ export function SkillsPanel() {
   const { character } = useGameStore()
   if (!character) return null
 
-  const styles = classAbilities[character.class]
+  const styles = (classAbilities as Partial<Record<Class, Record<string, SkillStyle>>>)[character.class]
   if (!styles) return null
-  const activeStyle = styles[character.skills.activeStyle] ?? Object.values(styles)[0]
-  if (!activeStyle) return null
 
   const allStyleSkills = Object.values(styles).flatMap(s => s.skills)
   const equipped = character.skills.equipped
-  const ultimateSkill = character.class ? ULTIMATE_SKILLS[character.class as Class] : undefined
-  const isUltEquipped = ultimateSkill && character.ultimateEquipped === ultimateSkill.id
+  const ultimateSkill = getUltimateForClass(character.class)
   const hasUlt = ultimateSkill != null
+  const isUltEquipped = hasUlt && character.ultimateEquipped === ultimateSkill.id
 
   return (
     <div className="w-full border-2 border-[var(--gothic-border)] bg-[#1a1210] mt-2">
@@ -504,7 +502,7 @@ export function SkillsPanel() {
             }`}
           >
             <span className={isUltEquipped ? 'text-amber-500' : 'text-[var(--gothic-text-dim)]'}>
-              &#9733; {ultimateSkill?.name}
+              &#9733; {ultimateSkill.name}
             </span>
             <span className={`text-[9px] ${isUltEquipped ? 'text-amber-700' : 'text-[var(--gothic-text-dim)]'}`}>
               {isUltEquipped ? 'Activa' : 'Inactiva'}

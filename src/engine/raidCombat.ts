@@ -69,10 +69,11 @@ export function processRaidTurn(
     next.log.push(`Tu ataque inflige ${final} de dano al jefe.`)
   } else if (playerAction === 'defend') {
     next.log.push('Te defiendes, reduciendo el dano recibido este turno.')
-  } else if (playerAction === 'heal') {
-    const healTarget = next.members
+  } else {
+    const healTarget: RaidMember | undefined = next.members
       .filter(m => m.currentHp > 0 && m.currentHp < m.maxHp)
-      .sort((a, b) => (a.currentHp / a.maxHp) - (b.currentHp / b.maxHp))[0]
+      .sort((a, b) => (a.currentHp / a.maxHp) - (b.currentHp / b.maxHp))
+      .at(0)
     if (healTarget) {
       const heal = 600
       healTarget.currentHp = Math.min(healTarget.maxHp, healTarget.currentHp + heal)
@@ -105,8 +106,8 @@ export function processRaidTurn(
     .filter(m => m.currentHp < m.maxHp)
     .sort((a, b) => (a.currentHp / a.maxHp) - (b.currentHp / b.maxHp))
   for (const healer of healers) {
-    if (wounded.length > 0) {
-      const target = wounded[0]
+    const target = wounded.at(0)
+    if (target) {
       const heal = healer.healPower + Math.floor(Math.random() * 100)
       target.currentHp = Math.min(target.maxHp, target.currentHp + heal)
     }
@@ -143,7 +144,7 @@ export function processRaidTurn(
       clampHp(m)
     }
   } else if (phase.bossDamageType === 'physical') {
-    const target = tanks.length > 0 ? tanks[Math.floor(Math.random() * tanks.length)] : alive[Math.floor(Math.random() * alive.length)]
+    const target = tanks.length > 0 ? tanks.at(Math.floor(Math.random() * tanks.length)) : alive.at(Math.floor(Math.random() * alive.length))
     if (target) {
       const mitigated = Math.floor(bossDmg * (target.armor / (target.armor + 300)))
       const final = Math.max(1, bossDmg - mitigated)
@@ -152,7 +153,7 @@ export function processRaidTurn(
       next.log.push(`${phase.bossAbility} golpea a ${target.name} por ${final}.`)
     }
   } else {
-    const target = alive[Math.floor(Math.random() * alive.length)]
+    const target = alive.at(Math.floor(Math.random() * alive.length))
     if (target) {
       const mitigated = Math.floor(bossDmg * (target.magicResist / (target.magicResist + 300)))
       const final = Math.max(1, bossDmg - mitigated)
