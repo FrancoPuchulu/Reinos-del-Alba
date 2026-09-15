@@ -1,17 +1,18 @@
 import React, { useState, useEffect, Suspense, useRef } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import { GameProvider, useGameStore } from '@/store/GameStore'
+import { dispatch, getState, useGameStore } from '@/store/GameStore'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { SplashScreen } from '@/components/common/SplashScreen'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { PageTransition } from '@/components/common/PageTransition'
-import { dispatch } from '@/store/GameStore'
 import { classAbilities, getUltimateForClass } from '@/data/gameData'
 import { generateEnemyForLevel } from './game/enemies'
 import { generateLoot } from './game/loot'
 import { generatePvPLoot } from './utils/smartLoot'
 import { BASE_STATS_CLASES } from './game/config'
 import { consumePendingPvpRival, getConsumedPvpRival, clearConsumedPvpRival } from './game/pvpRivalState'
+import { isExpeditionComplete } from './engine/expeditions'
+import { generateBonusBossForExpedition } from './game/bonusBoss'
 import type { Skill } from './types/game.types'
 import type { EnemyAbility } from './types/combat'
 
@@ -53,6 +54,20 @@ function AppContent() {
   const prevScreenRef = useRef<string>(screen)
   const isBonusBoss = screen === 'battle' && !!expedition?.bonusBossReady
   const bonusBossData = expedition?.bonusBossData ?? null
+
+  useEffect(() => {
+    if (!expedition || !character) return
+    const interval = setInterval(() => {
+      const exp = getState().expedition
+      const char = getState().character
+      if (!exp || !char) return
+      if (!isExpeditionComplete(exp)) return
+      if (exp.bonusBossReady) return
+      const bossData = generateBonusBossForExpedition(exp)
+      dispatch({ type: 'TRIGGER_BONUS_BOSS', payload: { expedition: exp, bossData } })
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [expedition, character])
 
   useEffect(() => {
     if (screen === 'battle' && prevScreenRef.current !== 'battle' && character) {
@@ -205,19 +220,17 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <GameProvider>
-        <AnimatePresence mode="wait">
-          {!ready ? (
-            <PageTransition key="splash">
-              <SplashScreen />
-            </PageTransition>
-          ) : (
-            <PageTransition key="app">
-              <AppContent />
-            </PageTransition>
-          )}
-        </AnimatePresence>
-      </GameProvider>
+      <AnimatePresence mode="wait">
+        {!ready ? (
+          <PageTransition key="splash">
+            <SplashScreen />
+          </PageTransition>
+        ) : (
+          <PageTransition key="app">
+            <AppContent />
+          </PageTransition>
+        )}
+      </AnimatePresence>
     </ErrorBoundary>
   )
 }

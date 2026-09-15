@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
+import { create } from 'zustand'
+import { createJSONStorage, persist } from 'zustand/middleware'
 import type { Character } from '../types/game'
 import type { Equipment, EquipmentSlot, StatBlock, ItemDefinition } from '../types/items'
 import type { CombatState } from '../types/combat'
@@ -8,10 +10,8 @@ import { talentTree, classAbilities } from '../data/gameData'
 import type { Talent, Race, Class } from '../types/game'
 import { BASE_STATS_CLASES, BASE_STATS_RAZAS } from '../game/config'
 import type { ActiveExpedition, ArenaRank, BonusBossData } from '../types/game.types'
-import { autosave, loadGame } from './persistence'
 import { gameEventBus } from '../events/EventBus'
-import { calculateRewards, isExpeditionComplete } from '../engine/expeditions'
-import { generateBonusBossForExpedition } from '../game/bonusBoss'
+import { calculateRewards } from '../engine/expeditions'
 
 export interface GameState {
   character: Character | null
@@ -19,6 +19,10 @@ export interface GameState {
   screen: 'login' | 'creation' | 'game' | 'battle' | 'shop'
   expedition: ActiveExpedition | null
   levelUpCount: number
+}
+
+type StoreState = GameState & {
+  dispatch: (action: GameAction) => void
 }
 
 export type GameAction =
@@ -57,16 +61,13 @@ export type GameAction =
   | { type: 'SAVE_LOADOUT'; payload: { name: string } }
   | { type: 'EQUIP_LOADOUT'; payload: { name: string } }
 
-let _state: GameState = {
+const initialState: GameState = {
   character: null,
   combat: null,
   screen: 'login',
   expedition: null,
   levelUpCount: 0
 }
-
-type Listener = (state: GameState) => void
-const _listeners: Set<Listener> = new Set()
 
 function applyTalentStatBonus(talent: Talent, base: StatBlock): StatBlock {
   if (talent.allStats) {
@@ -730,10 +731,6 @@ function reducer(state: GameState, action: GameAction): GameState {
   }
 }
 
-export function getState(): GameState {
-  return _state
-}
-
 const ELO_K = 32
 
 export function calculateElo(playerElo: number, opponentElo: number, won: boolean): number {
@@ -742,81 +739,141 @@ export function calculateElo(playerElo: number, opponentElo: number, won: boolea
   return Math.round(playerElo + ELO_K * (score - expected))
 }
 
-const AUTOSAVE_ACTIONS: ReadonlySet<GameAction['type']> = new Set([
-  'EQUIP_ITEM', 'UNEQUIP_ITEM', 'LEARN_TALENT', 'ADD_EXPERIENCE', 'LEVEL_UP',
-  'ADD_GOLD', 'ADD_CURRENCY', 'ADD_INVENTORY', 'ADD_ITEM_TO_INVENTORY', 'REMOVE_INVENTORY', 'UPDATE_CHARGES',
-  'START_EXPEDITION', 'FINISH_EXPEDITION', 'TRIGGER_BONUS_BOSS', 'START_BONUS_BATTLE', 'CLEAR_BONUS_BOSS', 'RECORD_PVP_RESULT',
-  'SELL_ITEM', 'EQUIP_ULTIMATE', 'UNEQUIP_ULTIMATE', 'SAVE_LOADOUT', 'EQUIP_LOADOUT'
-])
+const SAVE_KEY = 'reinos-del-alba-save'
+let saveTimer: ReturnType<typeof setTimeout> | null = null
 
-export function dispatch(action: GameAction): void {
-  _state = reducer(_state, action)
-  for (const listener of _listeners) {
-    listener(_state)
-  }
-  if (AUTOSAVE_ACTIONS.has(action.type) && _state.character) {
-    autosave()
-  }
+function hasStorage(): boolean {
+  return typeof localStorage !== 'undefined'
 }
 
-export function subscribe(listener: Listener): () => void {
-  _listeners.add(listener)
-  return () => { _listeners.delete(listener) }
-}
-
-export function resetStore(): void {
-  _state = { character: null, combat: null, screen: 'login', expedition: null, levelUpCount: 0 }
-  _listeners.clear()
-}
-
-const GameContext = createContext<GameState>(getState())
-
-export function GameProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<GameState>(getState)
-  const loadedRef = useRef(false)
-
-  useEffect(() => {
-    const unsub = subscribe(setState)
-    return unsub
-  }, [])
-
-  useEffect(() => {
-    if (loadedRef.current) return
-    loadedRef.current = true
-    const saved = loadGame()
-    if (saved) {
-      dispatch({ type: 'LOAD_GAME', payload: saved })
+function normalizeSavedValue(raw: string | null): string | null {
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    if (parsed && typeof parsed === 'object' && 'state' in parsed) {
+      return raw
     }
-  }, [])
+    return JSON.stringify({ state: { character: parsed, expedition: null }, version: 0 })
+  } catch {
+    return raw
+  }
+}
 
-  useEffect(() => {
-    const unsub = gameEventBus.subscribe('Victory', () => {
-      autosave()
-    })
-    return unsub
-  }, [])
+const THROTTLED_STORAGE = {
+  getItem: (name: string): string | null => {
+    if (!hasStorage()) return null
+    return normalizeSavedValue(localStorage.getItem(name))
+  },
+  setItem: (name: string, value: string): void => {
+    if (!hasStorage()) return
+    if (saveTimer) clearTimeout(saveTimer)
+    saveTimer = setTimeout(() => {
+      localStorage.setItem(name, value)
+    }, 2000)
+  },
+  removeItem: (name: string): void => {
+    if (!hasStorage()) return
+    localStorage.removeItem(name)
+  },
+}
 
-  useEffect(() => {
-    if (!state.expedition || !state.character) return
-    const interval = setInterval(() => {
-      const exp = getState().expedition
-      const char = getState().character
-      if (!exp || !char) return
-      if (!isExpeditionComplete(exp)) return
-      if (exp.bonusBossReady) return
-      const bossData = generateBonusBossForExpedition(exp)
-      dispatch({ type: 'TRIGGER_BONUS_BOSS', payload: { expedition: exp, bossData } })
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [state.expedition, state.character])
+function serializeCurrentSave(): string {
+  const state = zustandStore.getState()
+  return JSON.stringify({
+    state: {
+      character: state.character,
+      expedition: state.expedition,
+    },
+    version: 0,
+  })
+}
 
+function writeImmediateSave(): void {
+  if (!hasStorage()) return
+  if (saveTimer) {
+    clearTimeout(saveTimer)
+    saveTimer = null
+  }
+  localStorage.setItem(SAVE_KEY, serializeCurrentSave())
+}
+
+function isHydratedCharacterValid(character: unknown): character is Character {
+  if (!character || typeof character !== 'object') return false
+  const c = character as Record<string, unknown>
+  const wallet = c.wallet as Record<string, unknown> | null | undefined
   return (
-    <GameContext.Provider value={state}>
-      {children}
-    </GameContext.Provider>
+    typeof c.name === 'string' && c.name !== '' &&
+    typeof c.level === 'number' && (c.level as number) >= 1 &&
+    typeof c.class === 'string' && c.class !== '' &&
+    typeof c.race === 'string' && c.race !== '' &&
+    wallet != null &&
+    typeof wallet.gold === 'number' &&
+    typeof wallet.silver === 'number' &&
+    typeof wallet.copper === 'number'
   )
 }
 
-export function useGameStore(): GameState {
-  return useContext(GameContext)
+const zustandStore = create<StoreState>()(
+  persist(
+    (set, get) => ({
+      ...initialState,
+      dispatch: (action: GameAction) => {
+        const next = reducer(get(), action)
+        set({ ...next, dispatch: get().dispatch }, true)
+      },
+    }),
+    {
+      name: SAVE_KEY,
+      partialize: (state) => ({
+        character: state.character,
+        expedition: state.expedition,
+      }),
+      storage: createJSONStorage(() => THROTTLED_STORAGE),
+      merge: (persisted, current) => {
+        const saved = persisted as Partial<GameState> | null
+        return {
+          ...initialState,
+          ...current,
+          ...(saved ?? {}),
+          dispatch: current.dispatch,
+        }
+      },
+    }
+  )
+)
+
+export function useGameStore(): StoreState {
+  return zustandStore()
+}
+
+zustandStore.subscribe((state) => {
+  if (state.character && !isHydratedCharacterValid(state.character)) {
+    zustandStore.setState({ character: null, screen: 'login' })
+  }
+})
+
+gameEventBus.subscribe('Victory', () => {
+  writeImmediateSave()
+})
+
+export function dispatch(action: GameAction): void {
+  zustandStore.getState().dispatch(action)
+}
+
+export function getState(): GameState {
+  const { dispatch: _dispatch, ...state } = zustandStore.getState()
+  return state
+}
+
+export function resetStore(): void {
+  const currentDispatch = zustandStore.getState().dispatch
+  if (saveTimer) {
+    clearTimeout(saveTimer)
+    saveTimer = null
+  }
+  zustandStore.setState({ ...initialState, dispatch: currentDispatch }, true)
+}
+
+export function GameProvider({ children }: { children: ReactNode }) {
+  return <>{children}</>
 }

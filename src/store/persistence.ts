@@ -93,7 +93,7 @@ function migrateCharacter(raw: Record<string, unknown>): Character {
   }
 }
 
-function isValidCharacter(data: unknown): data is Record<string, unknown> {
+export function isValidCharacter(data: unknown): data is Record<string, unknown> {
   if (!data || typeof data !== 'object') return false
   const c = data as Record<string, unknown>
   if (typeof c.name !== 'string' || !c.name) return false

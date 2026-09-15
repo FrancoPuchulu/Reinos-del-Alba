@@ -30,6 +30,11 @@ beforeEach(() => {
 })
 
 describe('SET_CHARACTER', () => {
+  it('dispatch updates state synchronously', () => {
+    dispatch({ type: 'SET_SCREEN', payload: 'battle' })
+    expect(getState().screen).toBe('battle')
+  })
+
   it('sets character and switches to game screen', () => {
     const char = getState().character
     expect(char).toBeNull()
