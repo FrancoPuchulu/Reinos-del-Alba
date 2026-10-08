@@ -31,6 +31,9 @@ export const DEFEND_ARMOR_MULTIPLIER = 0.5
 // ── Extra Turn ─────────────────────────────────────────────
 export const EXTRA_TURN_CHANCE = 30
 
+// ── Ultimate Skills ────────────────────────────────────────
+export const ULTIMATE_DAMAGE_MULTIPLIER = 1.5
+
 // ── Status Effects ─────────────────────────────────────────
 export const DEFAULT_STATUS_DAMAGE = {
   veneno: 5,

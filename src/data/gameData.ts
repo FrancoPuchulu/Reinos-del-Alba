@@ -22,7 +22,7 @@ export const ULTIMATE_SKILLS: Record<Class, Skill> = {
   Mago: {
     id: 'mago-aniquilacion-arcan',
     name: 'Aniquilación Arcana',
-    effect: 'Canales todo el poder arcano en una explosión devastadora. Inflije 250% de Inteligencia como daño mágico y reduce la Resistencia Mágica del objetivo un 30% durante 3 turnos.',
+    effect: 'Canales todo el poder arcano en una explosión devastadora. Inflije 250% de Inteligencia como daño mágico y reduce la Resistencia Mágica del objetivo un 20% durante 3 turnos.',
     unlockLevel: 1,
     maxCharges: 1,
     baseDamage: 80,

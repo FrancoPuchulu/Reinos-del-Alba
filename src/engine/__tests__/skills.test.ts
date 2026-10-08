@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { calculateSkillDamage } from '../skills'
+import { ULTIMATE_DAMAGE_MULTIPLIER } from '../../game/combat-config'
 import type { Skill, StatBlock } from '../../types/game.types'
 
 describe('calculateSkillDamage', () => {
@@ -128,5 +129,24 @@ describe('calculateSkillDamage', () => {
     const result = calculateSkillDamage(skill, { fuerza: 10 }, { min: 6, max: 14 })
     expect(result.breakdown).toContain('fuerza x2')
     expect(result.breakdown).toContain('Arma x0.5')
+  })
+
+  it('amplifies ultimate skills with the ultimate damage multiplier', () => {
+    const skill: Skill = {
+      id: 'test-ult',
+      name: 'Test Ult',
+      effect: '',
+      unlockLevel: 1,
+      maxCharges: 1,
+      baseDamage: 100
+    }
+    const normal = calculateSkillDamage(skill, {}, { min: 0, max: 0 })
+    const ultimate = calculateSkillDamage({ ...skill, isUltimate: true }, {}, { min: 0, max: 0 })
+
+    expect(ultimate.min).toBe(Math.floor(100 * ULTIMATE_DAMAGE_MULTIPLIER * 0.85))
+    expect(ultimate.max).toBe(Math.floor(100 * ULTIMATE_DAMAGE_MULTIPLIER * 1.15))
+    expect(ultimate.average).toBeGreaterThan(normal.average)
+    expect(ultimate.breakdown).toContain(`Definitiva x${ULTIMATE_DAMAGE_MULTIPLIER}`)
+    expect(normal.breakdown).not.toContain('Definitiva')
   })
 })

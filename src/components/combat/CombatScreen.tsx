@@ -152,7 +152,7 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ playerData, enemyDat
     if (isUltimateSlot) {
       if (currentCharge < 100) return
     } else {
-      if (player.abilities[index].currentCharges <= 0) return
+      if (index >= player.abilities.length || player.abilities[index].currentCharges <= 0) return
     }
 
     setIsAnimating(true)
@@ -162,8 +162,7 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ playerData, enemyDat
       setPlayerUltimateCharge(0)
     }
 
-    const abilityIndex = isUltimateSlot ? 0 : index
-    const result = EngineBridge.selectAction(engineStateRef.current, battleState, abilityIndex)
+    const result = EngineBridge.selectAction(engineStateRef.current, battleState, index, isUltimateSlot)
 
     setPlayerUltimateCharge(prev => isUltimateSlot ? 0 : Math.min(100, prev + 20))
 
@@ -223,7 +222,9 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ playerData, enemyDat
   const isFrenzied = (enemy.affixes ?? []).includes('frenzy') && enemy.currentHp <= enemy.maxHp * 0.4
 
   const selectedSkill = playerData.fullSkills?.[selectedActionIndex] ?? null
-  const selectedCharges = player.abilities[selectedActionIndex] ?? null
+  const selectedCharges = selectedActionIndex === player.abilities.length && battleState.ultimateSkill != null
+    ? { currentCharges: playerUltimateCharge, maxCharges: 100 }
+    : (player.abilities[selectedActionIndex] ?? null)
 
   const playerStats: StatBlock = playerData.stats as StatBlock
   const weaponDamage = playerData.weaponDamage ?? { min: 5, max: 10 }

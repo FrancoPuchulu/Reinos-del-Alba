@@ -147,12 +147,14 @@ export class EngineBridge {
     return { engineState, uiState };
   }
 
-  public static selectAction(engineState: CombatState, uiState: BattleState, abilityIndex: number): CombatResult {
+  public static selectAction(engineState: CombatState, uiState: BattleState, abilityIndex: number, useUltimate = false): CombatResult {
     const playerAction: CombatAction = {
       type: 'skill',
       sourceId: engineState.allies[0].id,
       targetIds: ['enemy_1'],
-      abilityId: uiState.player.abilities[abilityIndex]?.id
+      abilityId: useUltimate
+        ? uiState.ultimateSkill?.id
+        : uiState.player.abilities[abilityIndex]?.id
     };
 
     const newEngine = processTurn(engineState, playerAction);
@@ -177,9 +179,9 @@ export class EngineBridge {
       newUi.combatLog.push(entry.message);
     }
 
-    if (playerAction.type === 'skill') {
-      const current = newUi.player.abilities[abilityIndex].currentCharges;
-      newUi.player.abilities[abilityIndex].currentCharges = Math.max(0, current - 1);
+    if (playerAction.type === 'skill' && !useUltimate && abilityIndex < newUi.player.abilities.length) {
+      const ability = newUi.player.abilities[abilityIndex];
+      ability.currentCharges = Math.max(0, ability.currentCharges - 1);
     }
 
     if (newEngine.phase === 'victory' || newEngine.phase === 'defeat') {

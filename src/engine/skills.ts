@@ -1,5 +1,6 @@
 import type { StatBlock } from '../types/items'
 import type { Skill } from '../types/game'
+import { ULTIMATE_DAMAGE_MULTIPLIER } from '../game/combat-config'
 
 export interface CalculatedDamage {
   min: number
@@ -27,7 +28,9 @@ export function calculateSkillDamage(
     ? ((weaponDamage.min + weaponDamage.max) / 2) * weaponMultiplier
     : 0
 
-  const finalBase = base + statBonus + weaponContribution
+  const rawBase = base + statBonus + weaponContribution
+  const ultimateBonus = skill.isUltimate ? rawBase * (ULTIMATE_DAMAGE_MULTIPLIER - 1) : 0
+  const finalBase = rawBase + ultimateBonus
 
   const profCrit = (characterStats.probCritico ?? 5) / 100
   const dañoCrit = (characterStats.dañoCritico ?? 50) / 100
@@ -40,6 +43,7 @@ export function calculateSkillDamage(
     `Base: ${base}`,
     scalingStat ? `${scalingStat} x${scalingFactor}: +${Math.floor(statBonus)}` : '',
     weaponMultiplier > 0 ? `Arma x${weaponMultiplier}: +${Math.floor(weaponContribution)}` : '',
+    skill.isUltimate ? `Definitiva x${ULTIMATE_DAMAGE_MULTIPLIER}: +${Math.floor(ultimateBonus)}` : '',
     `Total: ${min}-${max}`
   ].filter(Boolean).join(' | ')
 

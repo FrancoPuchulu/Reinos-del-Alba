@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createCombatState, calculateDamage, processTurn, createEnemy, createPlayerActor } from '../combat'
 import type { CombatActor, CombatEnemy, CombatAction, CombatState } from '../../types/combat'
 import { gameEventBus } from '../../events/EventBus'
+import { ULTIMATE_SKILLS } from '../../data/gameData'
 
 function makeAlly(overrides?: Partial<CombatActor>): CombatActor {
   return {
@@ -328,5 +329,67 @@ describe('createPlayerActor', () => {
     const actor = createPlayerActor('p1', 'Hero', {}, { min: 5, max: 10 }, 1)
     expect(actor.maxHp).toBe(80 + 12 * 10 + 1 * 5)
     expect(actor.maxMana).toBe(40 + 10 * 8 + 1 * 3)
+  })
+})
+
+describe('ultimate skills', () => {
+  beforeEach(() => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.9)
+  })
+
+  it('resolves a player ultimate skill by id instead of falling back to a basic attack', () => {
+    const state = createCombatState([makeAlly()], [makeEnemy()])
+    const next = processTurn(state, {
+      type: 'skill',
+      sourceId: 'ally_1',
+      targetIds: ['enemy_1'],
+      abilityId: ULTIMATE_SKILLS.Guerrero.id
+    })
+
+    expect(next.log.some(e => e.message.includes('⚡'))).toBe(true)
+    expect(next.enemies[0].currentHp).toBe(0)
+    expect(next.phase).toBe('victory')
+  })
+
+  it('deals at least 1.5x the raw skill base for an ultimate', () => {
+    const state = createCombatState([makeAlly()], [makeEnemy()])
+    const next = processTurn(state, {
+      type: 'skill',
+      sourceId: 'ally_1',
+      targetIds: ['enemy_1'],
+      abilityId: ULTIMATE_SKILLS.Guerrero.id
+    })
+
+    const rawBase = ULTIMATE_SKILLS.Guerrero.baseDamage ?? 0
+    const damageDealt = 100 - next.enemies[0].currentHp
+    expect(damageDealt).toBeGreaterThanOrEqual(Math.floor(rawBase * 1.5 * 0.85))
+  })
+
+  it('applies the mage ultimate debuff as a reduction, not as a buff', () => {
+    const state = createCombatState([makeAlly()], [makeEnemy()])
+    const next = processTurn(state, {
+      type: 'skill',
+      sourceId: 'ally_1',
+      targetIds: ['enemy_1'],
+      abilityId: ULTIMATE_SKILLS.Mago.id
+    })
+
+    const debuff = (next.statuses.enemies['enemy_1'] ?? []).find(s => s.type === 'debuff_resistenciaMagica')
+    expect(debuff).toBeDefined()
+    expect(debuff?.value ?? 0).toBeLessThan(0)
+  })
+
+  it('drains life back to the caster for the Brujo ultimate', () => {
+    const woundedAlly = makeAlly({ currentHp: 50, maxHp: 300 })
+    const state = createCombatState([woundedAlly], [makeEnemy()])
+    const next = processTurn(state, {
+      type: 'skill',
+      sourceId: 'ally_1',
+      targetIds: ['enemy_1'],
+      abilityId: ULTIMATE_SKILLS.Brujo.id
+    })
+
+    expect(next.allies[0].currentHp).toBeGreaterThan(50)
+    expect(next.log.some(e => e.message.includes('Colmillo Infernal'))).toBe(true)
   })
 })

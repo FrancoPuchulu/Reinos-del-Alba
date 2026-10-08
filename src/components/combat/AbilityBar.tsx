@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Skill } from '../../types/game.types'
+import { ULTIMATE_DAMAGE_MULTIPLIER } from '../../game/combat-config'
 
 interface AbilityBarProps {
   abilities: { name: string; currentCharges: number; maxCharges: number }[]
@@ -53,6 +54,9 @@ function buildTooltipLines(skill: Skill, charges: { currentCharges: number; maxC
       parts.push(`${skill.weaponMultiplier}x arma`)
     }
     lines.push(`Daño: ${parts.join(' + ')}`)
+    if (skill.isUltimate) {
+      lines.push(`Potencia definitiva ×${ULTIMATE_DAMAGE_MULTIPLIER}`)
+    }
   }
 
   if (skill.cost != null && skill.cost > 0) {

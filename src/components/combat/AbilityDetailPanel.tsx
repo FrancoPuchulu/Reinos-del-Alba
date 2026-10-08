@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Skill, StatBlock } from '../../types/game.types'
 import { calculateSkillDamage } from '../../engine/skills'
+import { ULTIMATE_DAMAGE_MULTIPLIER } from '../../game/combat-config'
 
 interface AbilityDetailPanelProps {
   skill: Skill | null
@@ -45,8 +46,27 @@ export function AbilityDetailPanel({
     return calculateSkillDamage(skill, playerStats, weaponDamage)
   }, [skill, playerStats, weaponDamage])
 
-  const canExecute = skill && charges && charges.currentCharges > 0 && !isAnimating && !isBattleOver
+  const isUltimateSkill = skill?.isUltimate === true
+
+  const preUltimateDamage = useMemo(() => {
+    if (!skill) return 0
+    const statBonus = skill.scalingStat && skill.scalingFactor
+      ? (playerStats[skill.scalingStat as keyof StatBlock] ?? 0) * skill.scalingFactor
+      : 0
+    const weaponBonus = skill.weaponMultiplier && skill.weaponMultiplier > 0
+      ? ((weaponDamage.min + weaponDamage.max) / 2) * skill.weaponMultiplier
+      : 0
+    return (skill.baseDamage ?? 10) + statBonus + weaponBonus
+  }, [skill, playerStats, weaponDamage])
+
+  const hasEnoughResource = charges != null
+    ? (isUltimateSkill ? charges.currentCharges >= 100 : charges.currentCharges > 0)
+    : false
+  const canExecute = skill && hasEnoughResource && !isAnimating && !isBattleOver
   const isDisabled = !canExecute
+  const resourceMissing = charges != null && (isUltimateSkill
+    ? charges.currentCharges < 100
+    : charges.currentCharges <= 0)
 
   return (
     <AnimatePresence mode="wait">
@@ -84,7 +104,7 @@ export function AbilityDetailPanel({
           {/* Stats row */}
           <div className="flex gap-3 text-[10px] text-[var(--gothic-text-dim)]">
             {charges && (
-              <span>Cargas: <span className={charges.currentCharges > 0 ? 'text-[#30a030]' : 'text-[#a01020]'}>{charges.currentCharges}/{charges.maxCharges}</span></span>
+              <span>{isUltimateSkill ? 'Carga:' : 'Cargas:'} <span className={hasEnoughResource ? 'text-[#30a030]' : 'text-[#a01020]'}>{isUltimateSkill ? `${charges.currentCharges}%` : `${charges.currentCharges}/${charges.maxCharges}`}</span></span>
             )}
             {skill.cost != null && skill.cost > 0 && (
               <span>Maná: <span className="text-[#3060c0]">{skill.cost}</span></span>
@@ -107,6 +127,12 @@ export function AbilityDetailPanel({
                   <div>
                     Arma ×{skill.weaponMultiplier}:{' '}
                     <span className="text-[var(--gothic-gold-copper)]">+{Math.floor(((weaponDamage.min + weaponDamage.max) / 2) * skill.weaponMultiplier)}</span>
+                  </div>
+                )}
+                {skill.isUltimate && (
+                  <div>
+                    Potencia definitiva ×{ULTIMATE_DAMAGE_MULTIPLIER}:{' '}
+                    <span className="text-amber-400">+{Math.floor(preUltimateDamage * (ULTIMATE_DAMAGE_MULTIPLIER - 1))}</span>
                   </div>
                 )}
                 <div className="pt-1 mt-1 border-t border-[var(--gothic-border)] font-bold">
@@ -148,9 +174,11 @@ export function AbilityDetailPanel({
             ⚔ Ejecutar Habilidad
           </motion.button>
 
-          {isDisabled && charges && charges.currentCharges <= 0 && (
+          {isDisabled && resourceMissing && !isAnimating && !isBattleOver && (
             <div className="text-[9px] text-[#a01020] text-center -mt-1">
-              Sin cargas disponibles
+              {isUltimateSkill
+                ? `Carga insuficiente (${charges.currentCharges}%) — se necesita 100%`
+                : 'Sin cargas disponibles'}
             </div>
           )}
         </motion.div>

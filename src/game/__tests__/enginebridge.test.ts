@@ -111,4 +111,58 @@ describe('EngineBridge', () => {
     emitSpy.mockRestore()
     randomSpy.mockRestore()
   })
+
+  it('selectAction with useUltimate casts the ultimate instead of ability 0', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    const ultimate: Skill = ULTIMATE_SKILLS.Guerrero
+
+    const battle = EngineBridge.startNewBattle(playerData, enemyData, undefined, ultimate)
+    const reference = EngineBridge.startNewBattle(playerData, enemyData, undefined, ultimate)
+    const startHp = reference.uiState.enemy.currentHp
+
+    const ultResult = EngineBridge.selectAction(
+      battle.engineState, battle.uiState, battle.uiState.player.abilities.length, true
+    )
+    const normalResult = EngineBridge.selectAction(reference.engineState, reference.uiState, 0)
+
+    const ultDamage = startHp - ultResult.uiState.enemy.currentHp
+    const normalDamage = startHp - normalResult.uiState.enemy.currentHp
+
+    expect(ultDamage).toBeGreaterThan(normalDamage)
+    expect(ultResult.uiState.combatLog.some(m => m.includes('⚡'))).toBe(true)
+
+    randomSpy.mockRestore()
+  })
+
+  it('selectAction with useUltimate does not consume regular ability charges', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    const ultimate: Skill = ULTIMATE_SKILLS.Guerrero
+    const battle = EngineBridge.startNewBattle(playerData, enemyData, undefined, ultimate)
+
+    const result = EngineBridge.selectAction(
+      battle.engineState, battle.uiState, battle.uiState.player.abilities.length, true
+    )
+
+    expect(result.uiState.player.abilities[0].currentCharges).toBe(
+      playerData.habilidades[0].cargas
+    )
+
+    randomSpy.mockRestore()
+  })
+
+  it('selectAction with useUltimate falls back safely when no ultimate is equipped', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    const battle = EngineBridge.startNewBattle(playerData, enemyData)
+
+    const result = EngineBridge.selectAction(
+      battle.engineState, battle.uiState, battle.uiState.player.abilities.length, true
+    )
+
+    expect(result.engineState.turn).toBeGreaterThan(battle.engineState.turn)
+    expect(result.uiState.player.abilities[0].currentCharges).toBe(
+      playerData.habilidades[0].cargas
+    )
+
+    randomSpy.mockRestore()
+  })
 })

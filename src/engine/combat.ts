@@ -9,7 +9,7 @@ import { isTargetAlias } from '../types/combat'
 import { calculateSkillDamage } from './skills'
 import { gameEventBus } from '../events/EventBus'
 import { applyEnemyAI } from './enemyAI'
-import { classAbilities } from '../data/gameData'
+import { classAbilities, ULTIMATE_SKILLS } from '../data/gameData'
 import { roll } from './utils'
 import {
   BASE_HIT_CHANCE, MIN_HIT_CHANCE, MAX_EVASION,
@@ -296,22 +296,33 @@ export function calculateDamage(
     let statusApplied: StatusInstance | null = null
     const skillStatusType = skill?.statusType as StatusEffectType | undefined
     if (!isHeal && skill?.statusChance && skillStatusType && roll(100) <= skill.statusChance) {
+      const isDebuffStatus = skillStatusType === 'debuff_armadura' || skillStatusType === 'debuff_resistenciaMagica'
+      const statusValue = isDebuffStatus
+        ? (skillStatusType === 'debuff_armadura'
+            ? SKILL_DEBUFF_VALUES.armorDebuff
+            : SKILL_DEBUFF_VALUES.resistanceDebuff)
+        : Math.floor(Math.abs(finalDamage) * STATUS_DAMAGE_MULTIPLIER)
       statusApplied = {
         type: skillStatusType,
         duration: skill.statusDuration ?? 2,
         source: action.sourceId,
-        value: Math.floor(Math.abs(finalDamage) * STATUS_DAMAGE_MULTIPLIER),
+        value: statusValue,
         skippedTurn: (skillStatusType === 'congelacion' || skillStatusType === 'aturdimiento')
       }
       const targetSideStatuses = target.side === 'ally' ? newState.statuses.allies : newState.statuses.enemies
       const targetKey = target.actor.id
       targetSideStatuses[targetKey] ??= []
       targetSideStatuses[targetKey] = [...targetSideStatuses[targetKey], statusApplied]
+      const statusText = isDebuffStatus
+        ? (skillStatusType === 'debuff_armadura'
+            ? `pierde ${Math.abs(SKILL_DEBUFF_VALUES.armorDebuff)}% armadura`
+            : `pierde ${Math.abs(SKILL_DEBUFF_VALUES.resistanceDebuff)}% resistencia mágica`)
+        : `sufre ${skillStatusType}`
       log.push({
         turn: state.turn,
         message: skill.isUltimate
-          ? `⚡ ${targetName} sufre ${skillStatusType} durante ${skill.statusDuration ?? 2} turnos`
-          : `${targetName} sufre ${skillStatusType}`,
+          ? `⚡ ${targetName} ${statusText} durante ${skill.statusDuration ?? 2} turnos`
+          : `${targetName} ${statusText}`,
         type: 'status'
       })
       gameEventBus.emit('StatusApplied', {
@@ -444,14 +455,19 @@ export function calculateDamage(
         extra: { damageType }
       })
 
-      if (skill?.isUltimate && skill.id === 'druida-tempestad-ancestral' && finalDamage > 0) {
-        const healAmount = Math.floor(Math.abs(finalDamage) * 0.5)
+      const ULTIMATE_DRAIN: Record<string, { percent: number; label: string }> = {
+        'druida-tempestad-ancestral': { percent: 50, label: 'la Tempestad Ancestral' },
+        'brujo-colmillo-infernal': { percent: 80, label: 'el Colmillo Infernal' },
+      }
+      const drain = skill?.isUltimate ? ULTIMATE_DRAIN[skill.id] : undefined
+      if (drain && finalDamage > 0) {
+        const healAmount = Math.floor(Math.abs(finalDamage) * drain.percent / 100)
         const caster = newState.allies.find(a => a.id === source.actor.id)
-        if (caster) {
+        if (caster && healAmount > 0) {
           caster.currentHp = Math.min(caster.maxHp, caster.currentHp + healAmount)
           log.push({
             turn: state.turn,
-            message: `🌿 ${caster.name} recupera ${healAmount} HP gracias a la Tempestad Ancestral`,
+            message: `🌿 ${caster.name} recupera ${healAmount} HP gracias a ${drain.label}`,
             type: 'heal'
           })
           gameEventBus.emit('Heal', {
@@ -701,6 +717,8 @@ export function processTurn(
 
 function findSkillForAction(action: CombatAction, _state: CombatState): Skill | null {
   if (!action.abilityId) return null
+  const ultimate = Object.values(ULTIMATE_SKILLS).find(s => s.id === action.abilityId)
+  if (ultimate) return ultimate
   for (const classKey of Object.keys(classAbilities) as Class[]) {
     const styles = classAbilities[classKey]
     for (const styleKey of Object.keys(styles)) {
