@@ -90,6 +90,51 @@ function applyTalentStatBonus(talent: Talent, base: StatBlock): StatBlock {
   return base
 }
 
+function grantExpeditionRewards(
+  char: Character,
+  expedition: ActiveExpedition
+): { character: Character; levelsGained: number } {
+  const rewards = calculateRewards(expedition, char.class, char.level, char.talentPoints)
+
+  let remainingXp = char.experience + rewards.experience
+  let level = char.level
+  let talentPoints = char.talentPoints + (rewards.talentPoint ? 1 : 0)
+  let levelsGained = 0
+
+  while (remainingXp >= level * 100) {
+    remainingXp -= level * 100
+    level += 1
+    talentPoints += 1
+    levelsGained += 1
+  }
+
+  let newGold = char.wallet.gold + rewards.gold
+  let newSilver = char.wallet.silver
+  const newCopper = char.wallet.copper
+
+  if (newGold >= 100) {
+    newSilver += Math.floor(newGold / 100)
+    newGold = newGold % 100
+  }
+
+  const newStash = rewards.item && char.stash.length < 48
+    ? [...char.stash, rewards.item]
+    : char.stash
+
+  return {
+    character: {
+      ...char,
+      level,
+      experience: remainingXp,
+      experienceToNext: level * 100,
+      talentPoints,
+      wallet: { gold: newGold, silver: newSilver, copper: newCopper },
+      stash: newStash,
+    },
+    levelsGained,
+  }
+}
+
 function reducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'SET_CHARACTER':
@@ -448,62 +493,28 @@ function reducer(state: GameState, action: GameAction): GameState {
       return { ...state, expedition: action.payload }
 
     case 'FINISH_EXPEDITION':
-      if (!state.character || !state.expedition) return { ...state, expedition: null }
-      {
-        const char = state.character
-        const rewards = calculateRewards(state.expedition, char.class, char.level, char.talentPoints)
-
-        let remainingXp = char.experience + rewards.experience
-        let level = char.level
-        let talentPoints = char.talentPoints + (rewards.talentPoint ? 1 : 0)
-        let levelsGained = 0
-
-        while (remainingXp >= level * 100) {
-          remainingXp -= level * 100
-          level += 1
-          talentPoints += 1
-          levelsGained += 1
-        }
-
-        const currentWallet = char.wallet
-        let newGold = currentWallet.gold + rewards.gold
-        let newSilver = currentWallet.silver
-        const newCopper = currentWallet.copper
-
-        if (newGold >= 100) {
-          newSilver += Math.floor(newGold / 100)
-          newGold = newGold % 100
-        }
-
-        const newStash = rewards.item && char.stash.length < 48
-          ? [...char.stash, rewards.item]
-          : char.stash
-
-        return {
-          ...state,
-          expedition: null,
-          levelUpCount: state.levelUpCount + levelsGained,
-          character: {
-            ...char,
-            level,
-            experience: remainingXp,
-            experienceToNext: level * 100,
-            talentPoints,
-            wallet: { gold: newGold, silver: newSilver, copper: newCopper },
-            stash: newStash,
-          }
-        }
-      }
+      return { ...state, expedition: null }
 
     case 'TRIGGER_BONUS_BOSS': {
-      const { expedition, bossData } = action.payload
+      if (!state.expedition || !state.character) return state
+      const { bossData } = action.payload
+      const baseExpedition: ActiveExpedition = {
+        ...state.expedition,
+        bonusBossReady: true,
+        bonusBossData: bossData,
+      }
+
+      // Las recompensas de la misión se entregan una sola vez, al completar el tiempo
+      if (state.expedition.rewardsGranted) {
+        return { ...state, expedition: baseExpedition }
+      }
+
+      const { character, levelsGained } = grantExpeditionRewards(state.character, state.expedition)
       return {
         ...state,
-        expedition: {
-          ...expedition,
-          bonusBossReady: true,
-          bonusBossData: bossData,
-        }
+        character,
+        levelUpCount: state.levelUpCount + levelsGained,
+        expedition: { ...baseExpedition, rewardsGranted: true },
       }
     }
 

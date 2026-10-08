@@ -228,6 +228,7 @@ export interface ActiveExpedition {
   durationMinutes: number
   bonusBossReady?: boolean
   bonusBossData?: BonusBossData
+  rewardsGranted?: boolean
 }
 
 export const DIFFICULTY_MULTIPLIER: Record<Difficulty, number> = {

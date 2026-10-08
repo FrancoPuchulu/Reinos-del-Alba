@@ -4,8 +4,7 @@ import type { Rarity } from '../types/game.types'
 import { RARITY_WEIGHTS } from '../types/game.types'
 import { roll } from '../engine/utils'
 
-function rollRarity(): Rarity {
-  const weights = RARITY_WEIGHTS.normal
+function rollRarity(weights: { normal: number; magico: number; epico: number; unico: number } = RARITY_WEIGHTS.normal): Rarity {
   const total = weights.normal + weights.magico + weights.epico + weights.unico
   const rarityRoll = roll(total) - 1
   let cum = 0
@@ -40,5 +39,14 @@ export function generateLoot(playerLevel: number, charClass?: Class): InventoryI
     durability: item.durability,
     maxDurability: item.maxDurability,
     equipped: false,
+  }
+}
+
+export function generateBonusLoot(playerLevel: number, charClass?: Class): InventoryItem {
+  const item = generateLoot(playerLevel, charClass)
+  return {
+    ...item,
+    source: 'bonificacion',
+    rarity: rollRarity(RARITY_WEIGHTS.heroico),
   }
 }

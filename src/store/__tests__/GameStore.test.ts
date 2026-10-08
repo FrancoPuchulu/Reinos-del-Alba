@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { dispatch, getState, resetStore } from '../GameStore'
 import { createEmptyEquipment } from '../../engine/equipment'
+import { generateBonusBossForExpedition } from '../../game/bonusBoss'
 import type { InventoryItem, EquipmentSlot } from '../../types/game.types'
 import type { Character } from '../../types/game'
 
@@ -23,6 +24,23 @@ function requireChar(): Character {
   const char = getState().character
   if (!char) throw new Error('Expected character to exist')
   return char
+}
+
+function startTestExpedition(): void {
+  dispatch({ type: 'START_EXPEDITION', payload: {
+    adventureName: 'Aguja Brisaveloz', category: 'misiones', difficulty: 'normal',
+    startTime: Date.now(), durationMinutes: 10
+  }})
+}
+
+function triggerBonusBoss(): void {
+  const exp = getState().expedition
+  if (!exp) throw new Error('Expected expedition to exist')
+  dispatch({ type: 'TRIGGER_BONUS_BOSS', payload: { expedition: exp, bossData: generateBonusBossForExpedition(exp) } })
+}
+
+function walletWealth(char: Character): number {
+  return char.wallet.gold + char.wallet.silver * 100 + char.wallet.copper * 10000
 }
 
 beforeEach(() => {
@@ -277,5 +295,57 @@ describe('FINISH_EXPEDITION', () => {
     expect(getState().expedition).not.toBeNull()
     dispatch({ type: 'FINISH_EXPEDITION' })
     expect(getState().expedition).toBeNull()
+  })
+
+  it('does not grant mission rewards (they are granted at time completion)', () => {
+    dispatch({ type: 'CREATE_CHARACTER', payload: { name: 'Hero', race: 'Humano', class: 'Guerrero' } })
+    startTestExpedition()
+    const before = requireChar()
+
+    dispatch({ type: 'FINISH_EXPEDITION' })
+
+    const after = requireChar()
+    expect(getState().expedition).toBeNull()
+    expect(after.wallet.gold).toBe(before.wallet.gold)
+    expect(after.experience).toBe(before.experience)
+    expect(after.stash.length).toBe(before.stash.length)
+    expect(after.talentPoints).toBe(before.talentPoints)
+  })
+})
+
+describe('TRIGGER_BONUS_BOSS', () => {
+  it('grants mission rewards when the expedition time completes', () => {
+    dispatch({ type: 'CREATE_CHARACTER', payload: { name: 'Hero', race: 'Humano', class: 'Guerrero' } })
+    startTestExpedition()
+    const before = requireChar()
+
+    triggerBonusBoss()
+
+    const after = requireChar()
+    expect(walletWealth(after)).toBeGreaterThan(walletWealth(before))
+    expect(after.level > before.level || after.experience > before.experience).toBe(true)
+    expect(after.stash.length).toBe(before.stash.length + 1)
+    expect(getState().expedition?.rewardsGranted).toBe(true)
+    expect(getState().expedition?.bonusBossReady).toBe(true)
+  })
+
+  it('never grants the mission rewards twice', () => {
+    dispatch({ type: 'CREATE_CHARACTER', payload: { name: 'Hero', race: 'Humano', class: 'Guerrero' } })
+    startTestExpedition()
+
+    triggerBonusBoss()
+    const afterFirst = requireChar()
+
+    triggerBonusBoss()
+    const afterSecond = requireChar()
+
+    expect(afterSecond.wallet.gold).toBe(afterFirst.wallet.gold)
+    expect(afterSecond.wallet.silver).toBe(afterFirst.wallet.silver)
+    expect(afterSecond.experience).toBe(afterFirst.experience)
+    expect(afterSecond.level).toBe(afterFirst.level)
+    expect(afterSecond.talentPoints).toBe(afterFirst.talentPoints)
+    expect(afterSecond.stash.length).toBe(afterFirst.stash.length)
+    expect(getState().expedition?.rewardsGranted).toBe(true)
+    expect(getState().expedition?.bonusBossReady).toBe(true)
   })
 })

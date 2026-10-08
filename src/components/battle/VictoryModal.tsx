@@ -93,16 +93,23 @@ export function VictoryModal({
                   className="border-t border-[var(--gothic-border)] pt-4 mb-6 relative z-10"
                 >
                   <div className="text-[8px] text-[var(--gothic-gold-copper)] uppercase tracking-wider mb-3 opacity-70">Recompensas</div>
-                  <div className="flex justify-center gap-8 text-[11px]">
-                    <div className="text-center">
-                      <div className="text-[var(--gothic-gold-bright)] font-mono text-sm">+{goldReward}</div>
-                      <div className="text-[8px] text-[var(--gothic-text-dim)] uppercase">Oro</div>
+                  {isBonusBoss ? (
+                    <div className="text-center text-[11px]">
+                      <div className="text-[var(--gothic-gold-bright)] font-mono text-sm">✓</div>
+                      <div className="text-[8px] text-[var(--gothic-text-dim)] uppercase">Recompensas de la misión entregadas al completar el tiempo</div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-[#3060c0] font-mono text-sm">+{expReward}</div>
-                      <div className="text-[8px] text-[var(--gothic-text-dim)] uppercase">Experiencia</div>
+                  ) : (
+                    <div className="flex justify-center gap-8 text-[11px]">
+                      <div className="text-center">
+                        <div className="text-[var(--gothic-gold-bright)] font-mono text-sm">+{goldReward}</div>
+                        <div className="text-[8px] text-[var(--gothic-text-dim)] uppercase">Oro</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-[#3060c0] font-mono text-sm">+{expReward}</div>
+                        <div className="text-[8px] text-[var(--gothic-text-dim)] uppercase">Experiencia</div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   {lootItem && (
                     <div className="mt-3 pt-3 border-t border-white/[0.06]">
                       <div className="text-[8px] text-[var(--gothic-gold-copper)] uppercase tracking-wider mb-2 opacity-70">

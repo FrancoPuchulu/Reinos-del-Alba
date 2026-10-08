@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { generateLoot } from '../loot'
+import { generateLoot, generateBonusLoot } from '../loot'
 import type { Rarity } from '../../types/game.types'
 
 const VALID_RARITIES: Rarity[] = ['normal', 'magico', 'epico', 'unico']
@@ -47,5 +47,28 @@ describe('generateLoot', () => {
 
   it('works without an explicit class', () => {
     expect(() => generateLoot(1)).not.toThrow()
+  })
+})
+
+describe('generateBonusLoot', () => {
+  it('returns a valid bonus InventoryItem', () => {
+    const item = generateBonusLoot(10, 'Guerrero')
+
+    expect(item.id).toBeTruthy()
+    expect(item.name).toBeTruthy()
+    expect(VALID_RARITIES).toContain(item.rarity)
+    expect(VALID_SLOTS).toContain(item.slot)
+    expect(item.source).toBe('bonificacion')
+    expect(item.equipped).toBe(false)
+  })
+
+  it('only produces valid rarities', () => {
+    for (let i = 0; i < 100; i++) {
+      expect(VALID_RARITIES).toContain(generateBonusLoot(1).rarity)
+    }
+  })
+
+  it('accepts high levels without throwing', () => {
+    expect(() => generateBonusLoot(50)).not.toThrow()
   })
 })

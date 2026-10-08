@@ -7,7 +7,7 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { PageTransition } from '@/components/common/PageTransition'
 import { classAbilities, getUltimateForClass } from '@/data/gameData'
 import { generateEnemyForLevel } from './game/enemies'
-import { generateLoot } from './game/loot'
+import { generateLoot, generateBonusLoot } from './game/loot'
 import { generatePvPLoot } from './utils/smartLoot'
 import { BASE_STATS_CLASES } from './game/config'
 import { consumePendingPvpRival, getConsumedPvpRival, clearConsumedPvpRival } from './game/pvpRivalState'
@@ -62,7 +62,7 @@ function AppContent() {
       const char = getState().character
       if (!exp || !char) return
       if (!isExpeditionComplete(exp)) return
-      if (exp.bonusBossReady) return
+      if (exp.bonusBossReady && exp.rewardsGranted) return
       const bossData = generateBonusBossForExpedition(exp)
       dispatch({ type: 'TRIGGER_BONUS_BOSS', payload: { expedition: exp, bossData } })
     }, 1000)
@@ -75,7 +75,9 @@ function AppContent() {
       const rival = consumePendingPvpRival()
       if (rival) {
         setPendingLoot(generatePvPLoot(character.class, rival.rewards.itemRarity))
-      } else if (!bonusBossData) {
+      } else if (bonusBossData) {
+        setPendingLoot(generateBonusLoot(character.level, character.class))
+      } else {
         setPendingEnemy(generateEnemyForLevel(character.level))
         setPendingLoot(generateLoot(character.level, character.class))
       }
@@ -185,6 +187,10 @@ function AppContent() {
                   }
                   clearConsumedPvpRival()
                 } else if (winner === 'player') {
+                  if (bonusBossData) {
+                    const bonusLoot = pendingLoot ?? generateBonusLoot(character.level, character.class)
+                    dispatch({ type: 'ADD_ITEM_TO_INVENTORY', payload: bonusLoot })
+                  }
                   dispatch({ type: 'FINISH_EXPEDITION' })
                 } else {
                   dispatch({ type: 'DEFEAT_PENALTY' })

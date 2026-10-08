@@ -337,6 +337,12 @@ function AdventureList({ category }: { category: Category }) {
                 {/* Action */}
                 <div className="mt-3 flex justify-center">
                   {isOnExpedition && activeExpedition.bonusBossReady && activeExpedition.adventureName === adv.name ? (
+                    <div className="flex flex-col items-center gap-1.5 w-full">
+                      {activeExpedition.rewardsGranted && (
+                        <span className="text-[8px] text-[#40a040] font-[var(--font-pixel)] tracking-wider uppercase">
+                          ✓ Recompensas de la misión entregadas
+                        </span>
+                      )}
                     <motion.button
                       initial={{ scale: 0.9, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
@@ -359,6 +365,7 @@ function AdventureList({ category }: { category: Category }) {
                         ¡Ir a la batalla!
                       </span>
                     </motion.button>
+                    </div>
                   ) : isOnExpedition ? (
                     <div className="flex flex-col items-center gap-2 w-full">
                       <div className="flex items-center gap-2 px-4 py-1.5 border border-[var(--wow-border-gold)] bg-[#1a1210]/50 rounded">
